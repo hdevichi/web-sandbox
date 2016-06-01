@@ -8,6 +8,7 @@ var lazypipe = require('lazypipe');
 var rimraf = require('rimraf');
 var wiredep = require('wiredep').stream;
 var runSequence = require('run-sequence');
+var browserSync = require('browser-sync').create();
 
 var yeoman = {
   app: require('./bower.json').appPath || 'app',
@@ -100,6 +101,7 @@ gulp.task('watch', function () {
     .pipe($.plumber())
     .pipe($.connect.reload());
 
+
   $.watch(paths.scripts)
     .pipe($.plumber())
     .pipe(lintScripts())
@@ -110,13 +112,27 @@ gulp.task('watch', function () {
     .pipe(lintScripts());
 
   gulp.watch('bower.json', ['bower']);
+  gulp.watch("app/*.html").on('change', browserSync.reload);
+
+  
 });
+
+gulp.task('browser-sync', function() {
+  browserSync.init({
+    open: true,
+    port: 9000,
+    server: {
+      baseDir: yeoman.app
+    }
+  });
+});
+
 
 gulp.task('serve', function (cb) {
   runSequence('clean:tmp',
     ['lint:scripts'],
     ['start:client'],
-    'watch', cb);
+    'watch', 'browser-sync',cb);
 });
 
 gulp.task('serve:prod', function() {
@@ -174,7 +190,8 @@ gulp.task('client:build', ['html', 'styles'], function () {
 
 gulp.task('html', function () {
   return gulp.src(yeoman.app + '/views/**/*')
-    .pipe(gulp.dest(yeoman.dist + '/views'));
+    .pipe(gulp.dest(yeoman.dist + '/views'))
+    .pipe(browserSync.reload({stream: true}));
 });
 
 gulp.task('images', function () {
@@ -184,7 +201,8 @@ gulp.task('images', function () {
         progressive: true,
         interlaced: true
     })))
-    .pipe(gulp.dest(yeoman.dist + '/images'));
+    .pipe(gulp.dest(yeoman.dist + '/images'))
+    .pipe(browserSync.reload({stream: true}));
 });
 
 gulp.task('copy:extras', function () {
